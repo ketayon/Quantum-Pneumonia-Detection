@@ -20,4 +20,4 @@ pegasos_score = pegasos_svc.score(X_test_reduced, y_test)
 log.info(f"PegasosQSVC classification test score: {pegasos_score}")
 
 # Save Model
-pegasos_svc.save('models/PegasosQSVC_Fidelity_quantm_trainer_brain_tumor.model')
+pegasos_svc.save('models/PegasosQSVC_Fidelity_quantm_trainer_pneumonia.model')
