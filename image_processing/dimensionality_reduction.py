@@ -7,6 +7,20 @@ logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
 
 
+def reduce_to_n_dimensions(data, n_dimensions):
+    n_features = data.shape[1]
+    if n_dimensions > n_features:
+        raise ValueError("Target dimensions > input features.")
+
+    split_size = n_features // n_dimensions
+    reduced = np.zeros((data.shape[0], n_dimensions))
+
+    for i in range(n_dimensions):
+        start, end = i * split_size, (i + 1) * split_size if i < n_dimensions - 1 else n_features
+        reduced[:, i] = np.mean(data[:, start:end], axis=1)
+    return reduced
+
+
 def reduce_to_2_dimensions(data):
     """
     Reduces the number of features in the dataset to 2 dimensions by averaging subsets of features.

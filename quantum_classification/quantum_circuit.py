@@ -1,10 +1,4 @@
 from qiskit.circuit import QuantumCircuit
-from qiskit.circuit.library import ZZFeatureMap
-
-
-def build_feature_map(num_qubits):
-    """Creates a ZZFeatureMap for quantum kernel learning."""
-    return ZZFeatureMap(feature_dimension=num_qubits, reps=1)
 
 
 def conv_layer(num_qubits, label, params):
@@ -27,7 +21,7 @@ def build_ansatz(num_qubits, params):
     """Builds the ansatz ensuring equal layers across all qubits."""
     ansatz = QuantumCircuit(num_qubits, name="Ansatz")
     layer_params = iter(params)
-
+    
     for layer in range(1, 4):
         conv_params = [next(layer_params) for _ in range(num_qubits)]
         ansatz.compose(

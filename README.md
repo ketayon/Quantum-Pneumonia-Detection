@@ -2,49 +2,75 @@
 
 This project is an **end-to-end AI solution** that integrates **Quantum AI, Computer Vision, and Hybrid Quantum-Classical Models** to detect **Pneumonia from Chest X-ray scans**. It utilizes **Quantum Kernel Learning (QKL)** and **Quantum Support Vector Classifiers (QSVC)** for enhanced medical diagnostics.
 
+---
+
 ## 🚀 Features
 
-- **Automated Chest X-ray Preprocessing & Augmentation**
-- **Quantum-Classical Hybrid Computation**
-- **IBM Quantum Cloud for Quantum Feature Extraction**
-- **Real-Time Web UI for Chest X-ray Visualization & Prediction**
-- **Command-Line Interface (CLI) for Direct Model Execution**
-- **Fully Dockerized for Seamless Deployment**
+- 🧠 Automated Chest X-ray Preprocessing & Augmentation  
+- 🔬 Quantum-Classical Hybrid Computation  
+- ☁️ IBM Quantum Cloud for Quantum Feature Extraction  
+- 🖼️ Real-Time Web UI for X-ray Visualization & Quantum Prediction  
+- 💻 Command-Line Interface (CLI) for Direct Model Execution  
+- 🐳 Fully Dockerized for Seamless Deployment  
+- 📤 Upload Chest X-ray Images via Web Interface  
 
 ---
 
-## 🏗 **Solution Architecture**
+## 🏗 Solution Architecture
 
-### 🔬 **End-to-End Processing Pipeline**
+### 🔬 End-to-End Processing Pipeline
+
 1. **Chest X-ray Preprocessing**  
-   - Loads **Pneumonia & Normal** X-ray images from datasets.  
-   - Applies grayscale conversion & contrast enhancement.  
+   - Loads **Pneumonia & Normal** X-ray images from datasets  
+   - Applies grayscale conversion, Gaussian blur, and scaling  
 
 2. **Quantum Feature Extraction**  
-   - Reduces X-ray data dimensionality using **PCA**.  
-   - Encodes optimized data into **Quantum Kernel Circuits**.  
+   - Reduces dimensionality with **PCA**  
+   - Encodes features into a **Quantum Circuit Ansatz**
 
 3. **Quantum Model Training & Classification**  
-   - Uses **Quantum Support Vector Classifiers (QSVC)** trained on **IBM Quantum Cloud**.  
-   - Hybrid **Quantum + Classical ML** improves Pneumonia detection accuracy.  
+   - Trains **Quantum Support Vector Classifiers (QSVC)** on **IBM Quantum Cloud**  
+   - Leverages hybrid learning for robust pneumonia detection
 
-4. **Automated Workflow Execution**  
-   - **JobScheduler & WorkflowManager** distribute quantum-classical computations.  
-   - IBM **Quantum Backend** executes quantum-enhanced feature processing.  
+4. **Workflow Automation**  
+   - Uses **JobScheduler** and **WorkflowManager** to manage execution  
+   - Submits jobs to **IBM Quantum Runtime** backend
 
 5. **Real-Time Visualization & Prediction**  
-   - **Web UI** provides **live Chest X-ray visualization**.  
-   - Users can **upload scans, analyze quantum model predictions, and visualize probability heatmaps**.  
+   - Web interface enables:
+     - 📤 Uploading Chest X-rays  
+     - 📈 Viewing PCA plots and probability histograms  
+     - 🧠 Running quantum model predictions
 
 ---
 
-## 🏗 **Installation Guide**
+## 🖼 Upload Chest X-ray via Web UI
 
-### **1️⃣ Clone the Repository**
+### ✅ What you can do:
+
+- Select or drag-and-drop a Chest X-ray image (`.jpg`, `.png`, `.jpeg`)  
+- Get **immediate predictions** using local simulation or  
+- Submit to **IBM Quantum** for async real-backend inference  
+- Polls IBM for results automatically, displays them in real time  
+- Visualizes prediction result, probability, and relevant plots
+
+### 💡 How it works:
+
+1. Image is **grayscaled**, blurred, and resized  
+2. PCA reduction → 18 features  
+3. Expanded into 54 quantum circuit params  
+4. Run via PegasosQSVC or **quantum circuit (simulated or real)**  
+5. Prediction shown in browser after processing  
+
+---
+
+## 🏗 Installation Guide
+
+### 1️⃣ Clone the Repository
+
 ```bash
 git clone https://github.com/your-repo/Quantum-Pneumonia-Detection
 cd Quantum-Pneumonia-Detection
-
 ```
 
 ### 2️⃣ **Setup Virtual Environment**
@@ -80,9 +106,9 @@ python interfaces/web_app/app.py
 🖥 **Access Web App:**  
 🔍 Open **`http://127.0.0.1:5000/`** in a browser.
 `📌 Web UI Features:`
-✅` Upload and analyze Chest X-ray scans.`
-✅ `View Quantum Model Predictions.`
-✅ `Visualize X-ray Images & Quantum Probability Heatmaps.`
+✅` 📤 Upload Chest X-rays.`
+✅ `🔬 Run local or IBM Quantum classification`
+✅ `📊 View PCA plots, confusion matrix, and prediction histograms`
 
 ---
 

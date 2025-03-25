@@ -1,20 +1,17 @@
-from qiskit.circuit.library import ZZFeatureMap
 from qiskit.primitives import StatevectorSampler as Sampler
 from qiskit_machine_learning.kernels import FidelityQuantumKernel
 from qiskit_machine_learning.state_fidelities import ComputeUncompute
+from qiskit.circuit import Parameter
+from .quantum_circuit import build_ansatz, calculate_total_params
 
-# Set number of qubits and hyperparameters
-num_qubits = 2
-tau = 100
-C = 1000
 
-# Define feature map using ZZFeatureMap
-feature_map = ZZFeatureMap(feature_dimension=num_qubits, reps=1)
+__all__ = ["kernel", "ansatz"]
 
-# Quantum kernel computation
+num_qubits = 6
+total_params = calculate_total_params(num_qubits)
+params = [Parameter(f'θ{i}') for i in range(total_params)]
+ansatz = build_ansatz(num_qubits, params)
+
 sampler = Sampler()
 fidelity = ComputeUncompute(sampler=sampler)
-kernel = FidelityQuantumKernel(fidelity=fidelity, feature_map=feature_map)
-
-# Export ansatz (Feature Map) for use in quantum circuits
-ansatz = feature_map  # Define ansatz properly
+kernel = FidelityQuantumKernel(fidelity=fidelity, feature_map=ansatz)

@@ -1,80 +1,111 @@
 import os
 import logging
-import numpy as np
 from qiskit_ibm_runtime import QiskitRuntimeService
 from qiskit_machine_learning.algorithms import PegasosQSVC
-from quantum_classification.quantum_model import pegasos_svc
-from image_processing.dimensionality_reduction import X_train_reduced, X_test_reduced
-from image_processing.data_loader import y_train, y_test
+
+from quantum_classification.quantum_model import pegasos_svc, train_and_save_qsvc
 from workflow.job_scheduler import JobScheduler
+from quantum_classification.quantum_async_jobs import (
+    submit_quantum_job,
+    check_quantum_job
+)
+from quantum_classification.quantum_estimation import predict_with_expectation
 
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
 
-# Define model path
 MODEL_PATH = "models/PegasosQSVC_Fidelity_quantm_trainer_pneumonia.model"
 
-# Load IBM Quantum Service
+# Ensure IBM token is set
 token = os.getenv("QISKIT_IBM_TOKEN")
-
 if not token:
     raise ValueError("ERROR: QISKIT_IBM_TOKEN environment variable is not set!")
 
+# Initialize IBMQ runtime
 service = QiskitRuntimeService(
     channel="ibm_quantum",
     instance="ibm-q/open/main",
     token=token
 )
-
 backend = service.least_busy(operational=True, simulator=False)
 
 
 class WorkflowManager:
-    """Manages the Pneumonia Quantum Classification Workflow"""
+    """Manages the Pneumonia X-ray Quantum Classification Workflow"""
 
     def __init__(self):
-        """Initialize Workflow Manager"""
         self.job_scheduler = JobScheduler()
         self.model = None
-        log.info("Quantum Pneumonia Workflow Initialized on Backend: %s", backend)
+        log.info("🚀 Quantum Pneumonia Workflow Initialized on Backend: %s", backend)
         self._load_or_train_model()
 
     def _load_or_train_model(self):
-        """Load the trained model if it exists, otherwise train and save"""
+        """Load the trained QSVC model if it exists, otherwise train and save"""
         if os.path.exists(MODEL_PATH):
-            log.info("Loading pre-trained Quantum Pneumonia Model...")
+            log.info("📥 Loading pre-trained Quantum Pneumonia Model...")
             self.model = PegasosQSVC.load(MODEL_PATH)
-            log.info("Model loaded successfully!")
+            log.info("✅ Model loaded successfully.")
         else:
-            log.info("No pre-trained model found. Training a new model...")
+            log.info("🧠 No trained model found. Starting training...")
             self.train_quantum_model()
-            log.info("Saving trained model...")
+            log.info("💾 Saving trained model...")
             pegasos_svc.save(MODEL_PATH)
             self.model = pegasos_svc
-            log.info("Model saved at: %s", MODEL_PATH)
+            log.info("📌 Model saved at: %s", MODEL_PATH)
 
     def train_quantum_model(self):
-        """Train the Quantum Model using Job Scheduler"""
-        log.info("Scheduling Quantum Model Training...")
+        """Schedule quantum model training"""
+        log.info("📅 Scheduling Quantum Model Training...")
         self.job_scheduler.schedule_task(self._execute_training)
 
     def _execute_training(self):
-        """Handles Quantum Training Execution"""
-        log.info("Executing Quantum Pneumonia Model Training...")
-        pegasos_svc.fit(X_train_reduced, y_train)
-        accuracy = pegasos_svc.score(X_test_reduced, y_test)
-        log.info(f"Quantum Pneumonia Model Training Completed. Accuracy: {accuracy:.2f}")
+        """Train model in a separate thread"""
+        log.info("🔁 Executing Pneumonia Model Training...")
+        accuracy = train_and_save_qsvc()
+        self.model = pegasos_svc
+        log.info(f"✅ Pneumonia QSVC Training Completed. Accuracy: {accuracy:.2f}")
 
-    def classify_xray_images(self, image_data):
-        """Classify Chest X-ray Images using the trained model"""
+    def classify_xray_image(self, image_data):
+        """Classify processed X-ray image using trained QSVC"""
         if self.model is None:
-            log.error("No trained model found. Please train the model first.")
+            log.error("❌ No trained model available. Please train first.")
             return None
-        log.info("Scheduling Pneumonia Classification Task...")
+        log.info("⚙️ Scheduling QSVC classification...")
         return self.job_scheduler.schedule_task(self._infer_pneumonia, image_data)
 
     def _infer_pneumonia(self, image_data):
-        """Infer if a chest X-ray image indicates pneumonia"""
-        log.info("Performing Pneumonia Image Classification...")
+        """Run classification on reduced input features"""
+        log.info("🔎 Performing QSVC prediction on input features...")
         prediction = self.model.predict(image_data)
         return prediction
+
+    @staticmethod
+    def classify_with_quantum_circuit(image_features):
+        """
+        Classify using expectation value from real IBM Quantum backend.
+        Meant for CLI/testing — not for web frontend (blocking call).
+        """
+        log.info("🧠 Running blocking classification via Estimator...")
+        prediction = predict_with_expectation(image_features)
+        log.info(f"🧬 IBM Quantum Prediction: {prediction}")
+        return prediction
+
+    @staticmethod
+    def submit_quantum_job_async(image_features):
+        """
+        Submit async job to IBMQ for backend execution.
+        Returns:
+            str: Job ID
+        """
+        log.info("📡 Submitting async job to IBM Quantum backend...")
+        return submit_quantum_job(image_features)
+
+    @staticmethod
+    def check_quantum_job_result(job_id):
+        """
+        Poll for job status/result from IBMQ backend.
+        Returns:
+            dict: {status, prediction, expectation_value}
+        """
+        log.info(f"🔍 Checking IBM Quantum Job: {job_id}")
+        return check_quantum_job(job_id)
