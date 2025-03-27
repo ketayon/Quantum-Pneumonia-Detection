@@ -124,9 +124,6 @@ docker build -t quantum-pneumonia .
 ### **2️⃣ Run Container**
 ```bash
 docker run -p 5000:5000 quantum-pneumonia
-
-if echo "QISKIT_IBM_TOKEN=your_ibm_quantum_token_here" > .env
-docker run --env-file .env -p 5000:5000 quantum-pneumonia
 ```
 
 🖥 **Access Web App:**  
