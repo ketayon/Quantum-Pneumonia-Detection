@@ -19,6 +19,7 @@ from monai.transforms import ScaleIntensity
 from flask import Flask, render_template, request, jsonify
 from qiskit_machine_learning.algorithms import PegasosQSVC
 from sklearn.metrics import confusion_matrix
+
 from image_processing.data_loader import count_images
 from image_processing.image_transformations import apply_grayscale, apply_gaussian_blur
 from image_processing.dimensionality_reduction import (
@@ -27,9 +28,8 @@ from image_processing.dimensionality_reduction import (
 )
 from image_processing.data_loader import (
     y_train, y_test,
-    train_path_norm, train_path_pneu, test_path_norm, test_path_pneu
+    train_path_pneu, train_path_norm
 )
-from quantum_classification.quantum_async_jobs import submit_quantum_job, check_quantum_job
 from workflow.workflow_manager import WorkflowManager
 
 logging.basicConfig(level=logging.INFO)
@@ -45,7 +45,7 @@ MODEL_PATH = "models/PegasosQSVC_Fidelity_quantm_trainer_pneumonia.model"
 if os.path.exists(MODEL_PATH):
     loaded_model = PegasosQSVC.load(MODEL_PATH)
     workflow_manager.model = loaded_model
-    log.info("Loaded trained QSVC model for Pneumonia Detection.")
+    log.info("Loaded trained QSVC model for Pneumonia.")
 else:
     log.warning("No trained pneumonia model found! Training a new one...")
     workflow_manager.train_quantum_model()
@@ -58,35 +58,34 @@ def home():
 
 @app.route("/dataset-info")
 def dataset_info():
+    pneumonia = count_images(train_path_pneu)
+    normal = count_images(train_path_norm)
     return jsonify({
-        "train_normal": count_images(train_path_norm),
-        "train_pneumonia": count_images(train_path_pneu),
-        "test_normal": count_images(test_path_norm),
-        "test_pneumonia": count_images(test_path_pneu),
+        "tumor_count": pneumonia,
+        "normal_count": normal
     })
 
 
 @app.route("/xray-image")
 def xray_image():
-    folder = train_path_pneu
-    if not os.path.exists(folder):
+    if not os.path.exists(train_path_pneu):
         return jsonify({"error": "Dataset folder not found!"}), 404
 
-    images = [f for f in os.listdir(folder) if f.lower().endswith(('.jpg', '.png', '.jpeg'))]
-    if not images:
+    image_files = [f for f in os.listdir(train_path_pneu) if f.lower().endswith(('.jpg', '.png', '.jpeg'))]
+    if not image_files:
         return jsonify({"error": "No X-ray images found!"}), 404
 
-    selected = random.choice(images)
-    path = os.path.join(folder, selected)
-    log.info(f"Selected Chest X-ray Image: {selected}")
+    selected = random.choice(image_files)
+    path = os.path.join(train_path_pneu, selected)
+    log.info(f"Selected X-ray Image: {selected}")
 
-    xray = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
-    scaled = ScaleIntensity(minv=0.0, maxv=1.0)(xray.astype(np.float32))
-    colored = plt.cm.viridis(scaled / np.max(scaled))
+    xray_img = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
+    scaled = ScaleIntensity(minv=0.0, maxv=1.0)(xray_img.astype(np.float32))
+    colored = plt.cm.magma(scaled / np.max(scaled))
 
     gray_path = os.path.join(STATIC_DIR, "xray_gray.jpg")
     colored_path = os.path.join(STATIC_DIR, "xray_colored.jpg")
-    plt.imsave(gray_path, xray, cmap="gray")
+    plt.imsave(gray_path, xray_img, cmap="gray")
     plt.imsave(colored_path, colored)
 
     return jsonify({
@@ -100,27 +99,31 @@ def pca_plot():
     try:
         plt.figure(figsize=(10, 8))
         plt.scatter(
-            X_train_reduced[y_train == 0][:, 0],
-            X_train_reduced[y_train == 0][:, 1],
-            label="Normal",
-            color="green", marker="o"
+            X_train_reduced[np.where(y_train == 0)[0], 0],
+            X_train_reduced[np.where(y_train == 0)[0], 1],
+            marker="o",
+            color="green",
+            label="Normal (Train)"
         )
         plt.scatter(
-            X_train_reduced[y_train == 1][:, 0],
-            X_train_reduced[y_train == 1][:, 1],
-            label="Pneumonia",
-            color="red", marker="x"
+            X_train_reduced[np.where(y_train == 1)[0], 0],
+            X_train_reduced[np.where(y_train == 1)[0], 1],
+            marker="x",
+            color="red",
+            label="Pneumonia (Train)"
         )
-        plt.title("PCA Visualization of X-ray Dataset")
+
+        plt.title("PCA Visualization of Chest X-ray Dataset")
         plt.xlabel("Component 1")
         plt.ylabel("Component 2")
         plt.legend()
         plt.grid(True)
-        path = os.path.join(STATIC_DIR, "pca_plot.jpg")
-        plt.savefig(path)
+
+        pca_path = os.path.join(STATIC_DIR, "pca_plot.jpg")
+        plt.savefig(pca_path)
         return jsonify({"pca_plot": "static/pca_plot.jpg"})
     except Exception as e:
-        log.exception("PCA plot generation failed")
+        log.exception("Error generating PCA plot")
         return jsonify({"error": str(e)}), 500
 
 
@@ -131,18 +134,18 @@ def predict_probabilities():
         probs = torch.tensor(preds, dtype=torch.float32).numpy()
 
         plt.figure(figsize=(10, 6))
-        plt.hist(probs, bins=30, color="blue", alpha=0.7, label="Prediction Scores")
-        plt.axvline(0.5, color="black", linestyle="--", label="Threshold = 0.5")
+        plt.hist(probs, bins=30, color="purple", alpha=0.7, label="Prediction Scores")
+        plt.axvline(0.5, color="black", linestyle="--", label="Decision Threshold (0.5)")
         plt.title("Prediction Probability Distribution")
         plt.xlabel("Prediction Score")
         plt.ylabel("Frequency")
         plt.legend()
 
-        path = os.path.join(STATIC_DIR, "predicted_probs.jpg")
-        plt.savefig(path)
+        plot_path = os.path.join(STATIC_DIR, "predicted_probs.jpg")
+        plt.savefig(plot_path)
         return jsonify({"predicted_probs_plot": "static/predicted_probs.jpg"})
     except Exception as e:
-        log.exception("Probability histogram failed")
+        log.exception("Error generating predicted probabilities")
         return jsonify({"error": str(e)}), 500
 
 
@@ -154,8 +157,8 @@ def confusion_matrix_plot():
         plt.figure(figsize=(6, 6))
         sns.heatmap(cm, annot=True, fmt="d", cmap="Blues", cbar=False)
         plt.xlabel("Predicted")
-        plt.ylabel("Actual")
-        plt.title("Confusion Matrix - Pneumonia Detection")
+        plt.ylabel("True")
+        plt.title("Confusion Matrix - Pneumonia")
         path = os.path.join(STATIC_DIR, "confusion_matrix.jpg")
         plt.savefig(path)
         return jsonify({"conf_matrix_plot": "static/confusion_matrix.jpg"})
@@ -192,7 +195,7 @@ def classify_uploaded_image():
 
         img = cv2.imread(temp)
         if img is None:
-            raise ValueError("Invalid or unreadable xray image.")
+            raise ValueError("Invalid or unreadable X-ray image.")
 
         gray = apply_grayscale(img)
         blurred = apply_gaussian_blur(gray)
@@ -201,9 +204,7 @@ def classify_uploaded_image():
         if np.std(resized) < 1e-3:
             raise ValueError("Uniform image — likely invalid.")
 
-        # Quantum Feature Prep
-        num_qubits = 18
-        layers = 3
+        num_qubits, layers = 18, 3
         total_params = num_qubits * layers
 
         reduced = reduce_to_n_dimensions(resized.reshape(1, -1), num_qubits)
@@ -213,34 +214,12 @@ def classify_uploaded_image():
         if len(features) != total_params:
             raise ValueError(f"Expected {total_params} features, got {len(features)}")
 
-        prediction = workflow_manager.classify_with_quantum_circuit(features)
+        prediction = workflow_manager.classify_with_quantum_circuit_noise(features)
         return jsonify({"quantum_prediction": prediction})
 
     except Exception as e:
         log.exception("Image classification failed")
-        return jsonify({"error": f"Invalid image: {str(e)}"}), 400
-
-
-@app.route("/quantum-job/submit", methods=["POST"])
-def quantum_job_submit():
-    try:
-        data = request.get_json()
-        features = np.array(data.get("features", []), dtype=np.float32)
-        job_id = submit_quantum_job(features)
-        return jsonify({"job_id": job_id, "message": "Quantum job submitted."})
-    except Exception as e:
-        log.exception("Error submitting quantum job")
-        return jsonify({"error": str(e)}), 400
-
-
-@app.route("/quantum-job/status/<job_id>", methods=["GET"])
-def quantum_job_status(job_id):
-    try:
-        result = check_quantum_job(job_id)
-        return jsonify(result)
-    except Exception as e:
-        log.exception("Error checking quantum job")
-        return jsonify({"error": str(e)}), 400
+        return jsonify({"error": f"Invalid X-ray image: {str(e)}"}), 400
 
 
 if __name__ == "__main__":

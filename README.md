@@ -1,14 +1,14 @@
 # 🫁 Quantum AI Pneumonia Detection
 
-This project is an **end-to-end AI solution** that integrates **Quantum AI, Computer Vision, and Hybrid Quantum-Classical Models** to detect **Pneumonia from Chest X-ray scans**. It utilizes **Quantum Kernel Learning (QKL)** and **Quantum Support Vector Classifiers (QSVC)** for enhanced medical diagnostics.
+This project is an **end-to-end AI solution** that integrates **Quantum AI, Computer Vision, and Quantum Model** to detect **Pneumonia from Chest X-ray scans**. It utilizes **Quantum Support Vector Classifiers (QSVC)** for enhanced medical diagnostics.
 
 ---
 
 ## 🚀 Features
 
 - 🧠 Automated Chest X-ray Preprocessing & Augmentation  
-- 🔬 Quantum-Classical Hybrid Computation  
-- ☁️ IBM Quantum Cloud for Quantum Feature Extraction  
+- 🔬 Quantum Computation  
+- ☁️ Aersimulator for Quantum Feature Extraction  
 - 🖼️ Real-Time Web UI for X-ray Visualization & Quantum Prediction  
 - 💻 Command-Line Interface (CLI) for Direct Model Execution  
 - 🐳 Fully Dockerized for Seamless Deployment  
@@ -29,12 +29,12 @@ This project is an **end-to-end AI solution** that integrates **Quantum AI, Comp
    - Encodes features into a **Quantum Circuit Ansatz**
 
 3. **Quantum Model Training & Classification**  
-   - Trains **Quantum Support Vector Classifiers (QSVC)** on **IBM Quantum Cloud**  
-   - Leverages hybrid learning for robust pneumonia detection
+   - Trains **Quantum Support Vector Classifiers (QSVC)** 
+   - Leverages quantum learning for robust pneumonia detection
 
 4. **Workflow Automation**  
    - Uses **JobScheduler** and **WorkflowManager** to manage execution  
-   - Submits jobs to **IBM Quantum Runtime** backend
+   - Submits jobs to **Quantum Runtime** backend
 
 5. **Real-Time Visualization & Prediction**  
    - Web interface enables:
@@ -50,7 +50,7 @@ This project is an **end-to-end AI solution** that integrates **Quantum AI, Comp
 
 - Select or drag-and-drop a Chest X-ray image (`.jpg`, `.png`, `.jpeg`)  
 - Get **immediate predictions** using local simulation or  
-- Submit to **IBM Quantum** for async real-backend inference  
+- Submit to **Quantum** for sync real-backend inference  
 - Polls IBM for results automatically, displays them in real time  
 - Visualizes prediction result, probability, and relevant plots
 
@@ -59,7 +59,7 @@ This project is an **end-to-end AI solution** that integrates **Quantum AI, Comp
 1. Image is **grayscaled**, blurred, and resized  
 2. PCA reduction → 18 features  
 3. Expanded into 54 quantum circuit params  
-4. Run via PegasosQSVC or **quantum circuit (simulated or real)**  
+4. Run via **PegasosQSVC**
 5. Prediction shown in browser after processing  
 
 ---
@@ -91,11 +91,13 @@ pip install -r requirements.txt
 
 ### **1️⃣ CLI Mode**
 ```bash
+python interfaces/cli.py --dataset-info
 python interfaces/cli.py --model-score
+python interfaces/cli.py --predict
 ```
 ✅ **Output Example:**  
-`Quantum QSVC on the training dataset: 0.89`
-`Quantum QSVC on the test dataset: 0.82`
+`Quantum QSVC on the training dataset: 0.75`
+`Quantum QSVC on the test dataset: 0.68`
 
 ---
 
@@ -107,7 +109,7 @@ python interfaces/web_app/app.py
 🔍 Open **`http://127.0.0.1:5000/`** in a browser.
 `📌 Web UI Features:`
 ✅` 📤 Upload Chest X-rays.`
-✅ `🔬 Run local or IBM Quantum classification`
+✅ `🔬 Run local for IBM Quantum classification`
 ✅ `📊 View PCA plots, confusion matrix, and prediction histograms`
 
 ---

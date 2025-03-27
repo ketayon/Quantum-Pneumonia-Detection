@@ -1,11 +1,14 @@
-import logging
 import numpy as np
+import logging
+from sklearn.decomposition import PCA
 from sklearn.preprocessing import MinMaxScaler
 from image_processing.data_loader import X_train, X_test
+
 
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
 
+__all__ = ["X_train_reduced", "X_test_reduced"]
 
 def reduce_to_n_dimensions(data, n_dimensions):
     n_features = data.shape[1]
@@ -21,29 +24,23 @@ def reduce_to_n_dimensions(data, n_dimensions):
     return reduced
 
 
-def reduce_to_2_dimensions(data):
-    """
-    Reduces the number of features in the dataset to 2 dimensions by averaging subsets of features.
-    
-    Args:
-        data (np.ndarray): Input dataset of shape (n_samples, n_features).
-    
-    Returns:
-        np.ndarray: Reduced dataset of shape (n_samples, 2).
-    """
-    n_features = data.shape[1]
-    split_size = n_features // 2
-    reduced_data = np.column_stack([
-        np.mean(data[:, :split_size], axis=1),
-        np.mean(data[:, split_size:], axis=1)
-    ])
-    return reduced_data
+X_train_flat = X_train.reshape(X_train.shape[0], -1)
+X_test_flat = X_test.reshape(X_test.shape[0], -1)
+
+use_pca = False
+n_dimensions = 18
 
 
-X_train_red = reduce_to_2_dimensions(X_train)
-X_test_red = reduce_to_2_dimensions(X_test)
+if use_pca:
+    pca = PCA(n_components=n_dimensions)
+    X_train_red = pca.fit_transform(X_train_flat)
+    X_test_red = pca.transform(X_test_flat)
+else:
+    X_train_red = reduce_to_n_dimensions(X_train_flat, n_dimensions)
+    X_test_red = reduce_to_n_dimensions(X_test_flat, n_dimensions)
 
-X_train_reduced = MinMaxScaler(feature_range=(0, np.pi)).fit_transform(X_train_red)
-X_test_reduced = MinMaxScaler(feature_range=(0, np.pi)).fit_transform(X_test_red)
+scaler = MinMaxScaler(feature_range=(0, np.pi))
+X_train_reduced = scaler.fit_transform(X_train_red)
+X_test_reduced = scaler.transform(X_test_red)
 
-log.info("Image processing pipeline completed. Data saved in datasets folder.")
+log.info("Dimensionality reduction & normalization complete.")

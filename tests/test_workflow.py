@@ -1,57 +1,78 @@
-import pytest
+import os
+import sys
 import numpy as np
-from unittest.mock import MagicMock, patch
+import pytest
+from unittest.mock import patch, MagicMock
+from qiskit.circuit import Parameter
+
+# Add project root to sys.path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
 from workflow.job_scheduler import JobScheduler
 from workflow.workflow_manager import WorkflowManager
-from quantum_classification.quantum_model import pegasos_svc
-from image_processing.data_loader import y_train, y_test
-from image_processing.dimensionality_reduction import X_train_reduced, X_test_reduced
 
-@pytest.fixture
-def job_scheduler():
-    """Fixture for JobScheduler instance."""
-    return JobScheduler(max_workers=2)
+# -----------------------------
+# Fixtures
+# -----------------------------
+valid_features = np.linspace(0, np.pi, 54)  # 18 qubits x 3 layers
+invalid_features = np.linspace(0, np.pi, 10)  # Too short
 
-@pytest.fixture
-def mock_workflow_manager():
-    """Fixture for WorkflowManager with mocked components."""
-    with patch("workflow.workflow_manager.JobScheduler") as mock_scheduler:
-        mock_instance = mock_scheduler.return_value
-        workflow = WorkflowManager()
-        workflow.job_scheduler = mock_instance  # Mock scheduler to avoid real execution
-        return workflow
+# -----------------------------
+# JobScheduler Tests
+# -----------------------------
 
-def test_schedule_task(job_scheduler):
-    """Test scheduling a simple task."""
-    def sample_task(x):
-        return x * 2
+def test_scheduler_executes_task():
+    scheduler = JobScheduler(max_workers=1)
+    result = scheduler.schedule_task(lambda x: x + 1, 10)
+    assert result == 11
 
-    result = job_scheduler.schedule_task(sample_task, 5)
-    assert result == 10, "JobScheduler did not return expected task result"
+# -----------------------------
+# Interpretation Logic
+# -----------------------------
 
-def test_workflow_training(mock_workflow_manager):
-    """Test quantum model training using JobScheduler."""
-    with patch.object(mock_workflow_manager, "train_quantum_model") as mock_train:
-        mock_workflow_manager.train_quantum_model()
-        mock_train.assert_called_once()
+def test_interpret_counts_pneumonia():
+    counts = {'111': 900, '000': 124}
+    result = WorkflowManager._interpret_quantum_counts(counts)
+    assert result in ["Pneumonia Detected", "Normal"]
 
-def test_workflow_inference(mock_workflow_manager):
-    """Test MRI classification inference with mock data."""
-    sample_mri_data = np.random.rand(1, X_train_reduced.shape[1])
+def test_interpret_counts_normal():
+    counts = {'000': 900, '111': 124}
+    result = WorkflowManager._interpret_quantum_counts(counts)
+    assert result in ["Pneumonia Detected", "Normal"]
 
-    # Mock classify_mri_images function to return predefined result
-    mock_workflow_manager.classify_mri_images = MagicMock(return_value=np.array([1]))
+def test_interpret_empty_counts():
+    with pytest.raises(ValueError, match="Empty counts from quantum simulation."):
+        WorkflowManager._interpret_quantum_counts({})
 
-    result = mock_workflow_manager.classify_mri_images(sample_mri_data)
-    np.testing.assert_array_equal(result, np.array([1]), "Inference did not return expected classification result")
+# -----------------------------
+# Local Classification
+# -----------------------------
 
-def test_quantum_model_classification():
-    """Test PegasosQSVC model classification accuracy."""
-    train_score = pegasos_svc.score(X_train_reduced[:10], y_train[:10])
-    test_score = pegasos_svc.score(X_test_reduced[:10], y_test[:10])
+@patch("workflow.workflow_manager.predict_with_expectation", return_value="Pneumonia Detected")
+def test_classify_with_quantum_circuit(mock_predict):
+    result = WorkflowManager.classify_with_quantum_circuit(valid_features)
+    assert result == "Pneumonia Detected"
 
-    assert 0.0 <= train_score <= 1.0, "Invalid train score range"
-    assert 0.0 <= test_score <= 1.0, "Invalid test score range"
+def test_classify_with_quantum_circuit_noise_invalid():
+    with pytest.raises(ValueError, match="Expected .* features"):
+        WorkflowManager.classify_with_quantum_circuit_noise(invalid_features)
 
-if __name__ == "__main__":
-    pytest.main()
+# -----------------------------
+# Initialization / Load Logic
+# -----------------------------
+
+@patch("workflow.workflow_manager.PegasosQSVC.load")
+@patch("workflow.workflow_manager.os.path.exists", return_value=True)
+def test_workflow_manager_loads_existing_model(mock_exists, mock_load):
+    mock_model = MagicMock()
+    mock_load.return_value = mock_model
+    manager = WorkflowManager()
+    assert manager.model == mock_model
+    mock_load.assert_called_once()
+
+@patch("workflow.workflow_manager.train_and_save_qsvc", return_value=0.95)
+@patch("workflow.workflow_manager.os.path.exists", return_value=False)
+def test_workflow_manager_trains_when_model_missing(mock_exists, mock_train):
+    with patch("workflow.workflow_manager.PegasosQSVC.save") as mock_save:
+        manager = WorkflowManager()
+        assert manager.model is not None

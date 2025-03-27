@@ -2,20 +2,15 @@ import os
 import numpy as np
 import logging
 from PIL import Image
-from sklearn.model_selection import train_test_split
-import kagglehub
 
 
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
 
-path = kagglehub.dataset_download(r"paultimothymooney/chest-xray-pneumonia")
-log.info("Downloading dataset from Kaggle...")
-
-train_path_norm = f'{path}/chest_xray/chest_xray/train/NORMAL'
-train_path_pneu = f'{path}/chest_xray/chest_xray/train/PNEUMONIA'
-test_path_norm = f'{path}/chest_xray/chest_xray/test/NORMAL'
-test_path_pneu = f'{path}/chest_xray/chest_xray/test/PNEUMONIA'
+train_path_norm = 'datasets/chest_xray/train/NORMAL'
+train_path_pneu = 'datasets/chest_xray/train/PNEUMONIA'
+test_path_norm = 'datasets/chest_xray/test/NORMAL'
+test_path_pneu = 'datasets/chest_xray/test/PNEUMONIA'
 
 # Remove potential .DS_Store files
 for folder in [train_path_norm, train_path_pneu, test_path_norm, test_path_pneu]:

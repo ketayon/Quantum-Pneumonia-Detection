@@ -5,7 +5,7 @@ import cv2
 from PIL import Image
 from image_processing.data_loader import load_images_from_folder, load_and_limit_data
 from image_processing.image_transformations import apply_grayscale, apply_gaussian_blur, apply_histogram_equalization
-from image_processing.dimensionality_reduction import reduce_to_2_dimensions
+from image_processing.dimensionality_reduction import reduce_to_n_dimensions
 
 # Define dataset paths for Pneumonia classification
 path = "./tests/mock_dataset"
@@ -82,11 +82,12 @@ def test_apply_histogram_equalization():
     assert enhanced_img.dtype == np.uint8  # Check data type
 
 # Test Dimensionality Reduction
-def test_reduce_to_2_dimensions():
-    """Tests dimensionality reduction from original features to 2 components"""
+def test_reduce_to_n_dimensions():
+    """Tests dimensionality reduction from original features to 8 components"""
     mock_data = np.random.rand(10, 64)  # 10 samples, 64 features
-    reduced_data = reduce_to_2_dimensions(mock_data)  # Reduce to 2 dimensions
-    assert reduced_data.shape == (10, 2)
+    reduced_data = reduce_to_n_dimensions(mock_data, 8)  # Reduce to 8 dimensions
+    assert reduced_data.shape == (10, 8)
+
 
 if __name__ == "__main__":
     pytest.main()
