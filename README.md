@@ -12,7 +12,7 @@ This project is an **end-to-end AI solution** that integrates **Quantum AI, Comp
 - 🖼️ Real-Time Web UI for X-ray Visualization & Quantum Prediction  
 - 💻 Command-Line Interface (CLI) for Direct Model Execution  
 - 🐳 Fully Dockerized for Seamless Deployment  
-- 📤 Upload Chest X-ray Images via Web Interface  
+- 📤 Upload Chest X-ray Images via Web Interface (image size 256x256)
 
 ---
 
