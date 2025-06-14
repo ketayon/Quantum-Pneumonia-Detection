@@ -41,14 +41,14 @@ os.makedirs(STATIC_DIR, exist_ok=True)
 
 workflow_manager = WorkflowManager()
 
-MODEL_PATH = "models/PegasosQSVC_Fidelity_quantm_trainer_pneumonia.model"
-if os.path.exists(MODEL_PATH):
-    loaded_model = PegasosQSVC.load(MODEL_PATH)
-    workflow_manager.model = loaded_model
-    log.info("Loaded trained QSVC model for Pneumonia.")
-else:
-    log.warning("No trained pneumonia model found! Training a new one...")
-    workflow_manager.train_quantum_model()
+# MODEL_PATH = "models/PegasosQSVC_Fidelity_quantm_trainer_pneumonia.model"
+# if os.path.exists(MODEL_PATH):
+#     loaded_model = PegasosQSVC.load(MODEL_PATH)
+#     workflow_manager.model = loaded_model
+#     log.info("Loaded trained QSVC model for Pneumonia.")
+# else:
+#     log.warning("No trained pneumonia model found! Training a new one...")
+#     workflow_manager.train_quantum_model()
 
 
 @app.route("/")
